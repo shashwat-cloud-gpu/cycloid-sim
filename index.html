@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Cycloid Physics Engine</title>
+    <style>
+        body {
+            margin: 0; padding: 20px; background-color: #0d1117; color: #c9d1d9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            display: flex; gap: 20px; justify-content: center;
+        }
+        .canvas-container {
+            background: #161b22; padding: 20px; border-radius: 12px;
+            border: 1px solid #30363d; box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+        }
+        canvas { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; }
+        .controls { display: flex; gap: 20px; margin-top: 15px; padding: 15px; background: #21262d; border-radius: 8px; }
+        .slider-group { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+        input[type="range"] { accent-color: #58a6ff; cursor: pointer; }
+        
+        .dashboard {
+            background: #161b22; padding: 20px; border-radius: 12px;
+            border: 1px solid #30363d; width: 300px; font-family: monospace;
+        }
+        h2, h3 { color: #58a6ff; margin-top: 0; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #30363d; }
+        .val { color: #ffca28; font-weight: bold; }
+        .vector-legend { margin-top: 20px; padding: 10px; background: #0d1117; border-radius: 6px; }
+        .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .color-box { width: 15px; height: 15px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<div class="canvas-container">
+    <h2>Crossed Fields: Vector Dynamics</h2>
+    <canvas id="simCanvas" width="800" height="450"></canvas>
+    
+    <div class="controls">
+        <div class="slider-group">
+            <label>Electric Field (E): <span id="labelE">15</span> V/m</label>
+            <input type="range" id="sliderE" min="5" max="30" step="1" value="15">
+        </div>
+        <div class="slider-group">
+            <label>Magnetic Field (B): <span id="labelB">2.0</span> T</label>
+            <input type="range" id="sliderB" min="1" max="4" step="0.1" value="2.0">
+        </div>
+        <button id="resetBtn" style="padding: 10px 20px; background: #238636; color: white; border: none; border-radius: 6px; cursor: pointer;">Reset Trajectory</button>
+    </div>
+</div>
+
+<div class="dashboard">
+    <h3>Physics Engine Data</h3>
+    <p style="color: #8b949e; font-size: 12px;">Assuming q=1 C, m=1 kg. B is out of page (+z), E is UP (+y).</p>
+    
+    <div class="stat-row"><span>Drift Vel (E/B)</span> <span class="val" id="outVd">0.00</span></div>
+    <div class="stat-row"><span>Max Height (2mE/qB²)</span> <span class="val" id="outH">0.00</span></div>
+    
+    <h3 style="margin-top: 20px; font-size: 14px; color: #8b949e;">Instantaneous Vectors</h3>
+    <div class="stat-row"><span>Vel x (v_x)</span> <span class="val" id="outVx">0.00</span></div>
+    <div class="stat-row"><span>Vel y (v_y)</span> <span class="val" id="outVy">0.00</span></div>
+    <div class="stat-row"><span>Net Force Y (F_y)</span> <span class="val" id="outFy">0.00</span></div>
+
+    <div class="vector-legend">
+        <div class="legend-item"><div class="color-box" style="background:#4caf50;"></div> Electric Force (qE)</div>
+        <div class="legend-item"><div class="color-box" style="background:#2196f3;"></div> Magnetic Force (qv×B)</div>
+        <div class="legend-item"><div class="color-box" style="background:#ff5252;"></div> Net Velocity (v)</div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // UI Elements
+    const sliderE = document.getElementById('sliderE');
+    const sliderB = document.getElementById('sliderB');
+    const labelE = document.getElementById('labelE');
+    const labelB = document.getElementById('labelB');
+    
+    // Core Physics Variables
+    let E = parseFloat(sliderE.value);
+    let B = parseFloat(sliderB.value);
+    const q = 1; // Charge
+    const m = 1; // Mass
+    
+    let t = 0; // Time
+    let pathHistory = [];
+    const scale = 5; // Visual scaling factor
+    const groundY = canvas.height - 40;
+
+    function resetSim() {
+        t = 0;
+        pathHistory = [];
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    sliderE.addEventListener('input', (e) => { E = parseFloat(e.target.value); labelE.innerText = E; resetSim(); });
+    sliderB.addEventListener('input', (e) => { B = parseFloat(e.target.value); labelB.innerText = B.toFixed(1); resetSim(); });
+    document.getElementById('resetBtn').addEventListener('click', resetSim);
+
+    function drawArrow(fromx, fromy, tox, toy, color, width=2) {
+        const headlen = 8; 
+        const dx = tox - fromx;
+        const dy = toy - fromy;
+        const angle = Math.atan2(dy, dx);
+        ctx.beginPath();
+        ctx.moveTo(fromx, fromy);
+        ctx.lineTo(tox, toy);
+        ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+        ctx.moveTo(tox, toy);
+        ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.stroke();
+    }
+
+    function updatePhysics() {
+        // Advanced Equations
+        let omega = (q * B) / m;
+        let R = E / (omega * B); // mE / qB^2
+        let v_drift = E / B;
+
+        // Kinematics at time t
+        let x = R * (omega * t - Math.sin(omega * t));
+        let y = R * (1 - Math.cos(omega * t));
+        
+        let vx = v_drift * (1 - Math.cos(omega * t));
+        let vy = v_drift * Math.sin(omega * t);
+
+        // Forces
+        // Electric Force is constant UP (+y in math, -y on canvas)
+        let F_e_y = q * E; 
+        
+        // Magnetic Force F = q(v x B). B is out of page (+z).
+        // F_m = q(vx*i + vy*j) x (B*k) = -q*vx*B*j + q*vy*B*i
+        let F_m_x = q * vy * B;
+        let F_m_y = -q * vx * B; // Downwards (-y in math, +y on canvas)
+
+        let F_net_y = F_e_y + F_m_y;
+
+        // Visual Mapping
+        let drawX = 50 + x * scale;
+        let drawY = groundY - y * scale;
+
+        // Loop screen if particle goes off right edge
+        if (drawX > canvas.width + 50) { resetSim(); return; }
+
+        pathHistory.push({x: drawX, y: drawY});
+
+        // 1. Clear & Draw Ground
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY);
+        ctx.strokeStyle = '#30363d'; ctx.lineWidth = 2; ctx.stroke();
+
+        // 2. Draw Trajectory Path
+        ctx.beginPath();
+        if(pathHistory.length > 0) ctx.moveTo(pathHistory[0].x, pathHistory[0].y);
+        for(let p of pathHistory) { ctx.lineTo(p.x, p.y); }
+        ctx.strokeStyle = 'rgba(100, 255, 218, 0.4)'; ctx.lineWidth = 2; ctx.stroke();
+
+        // 3. Draw Particle
+        ctx.beginPath(); ctx.arc(drawX, drawY, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#c9d1d9'; ctx.fill();
+
+        // 4. Draw Vectors (scaled for visual clarity)
+        let vecScale = 1.5;
+        // Velocity (Red)
+        drawArrow(drawX, drawY, drawX + vx*vecScale, drawY - vy*vecScale, '#ff5252');
+        // Electric Force (Green) - Points straight up
+        drawArrow(drawX, drawY, drawX, drawY - F_e_y*vecScale, '#4caf50');
+        // Magnetic Force (Blue)
+        drawArrow(drawX, drawY, drawX + F_m_x*vecScale, drawY + (-F_m_y)*vecScale, '#2196f3');
+
+        // Update Dashboard Data
+        document.getElementById('outVd').innerText = v_drift.toFixed(2);
+        document.getElementById('outH').innerText = (2 * R).toFixed(2);
+        document.getElementById('outVx').innerText = vx.toFixed(2);
+        document.getElementById('outVy').innerText = vy.toFixed(2);
+        document.getElementById('outFy').innerText = F_net_y.toFixed(2);
+
+        // Advance time
+        t += 0.04;
+        requestAnimationFrame(updatePhysics);
+    }
+
+    // Start Engine
+    updatePhysics();
+</script>
+
+</body>
+</html>
