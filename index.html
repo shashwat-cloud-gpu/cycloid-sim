@@ -5,67 +5,230 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced Cycloid Physics Engine</title>
     <style>
+        :root {
+            --bg-base: #000000;
+            --bg-panel: #0a0a0a;
+            --border-color: #222222;
+            --accent-primary: #00e5ff;
+            --accent-hover: #00b3cc;
+            --text-main: #f0f0f0;
+            --text-muted: #888888;
+            --neon-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            
+            /* Physics Colors */
+            --color-electric: #00e5ff;
+            --color-magnetic: #b338ff;
+            --color-velocity: #ff3860;
+        }
+
         body {
-            margin: 0; padding: 20px; background-color: #0d1117; color: #c9d1d9;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            display: flex; gap: 20px; justify-content: center;
+            margin: 0; 
+            padding: 2vw; 
+            background-color: var(--bg-base); 
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            display: flex; 
+            flex-wrap: wrap;
+            gap: 24px; 
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
+
+        /* Container Styling */
         .canvas-container {
-            background: #161b22; padding: 20px; border-radius: 12px;
-            border: 1px solid #30363d; box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+            background: var(--bg-panel); 
+            padding: 24px; 
+            border-radius: 16px;
+            border: 1px solid var(--border-color); 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            flex: 1 1 100%;
+            max-width: 800px;
+            box-sizing: border-box;
         }
-        canvas { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; }
-        .controls { display: flex; gap: 20px; margin-top: 15px; padding: 15px; background: #21262d; border-radius: 8px; }
-        .slider-group { flex: 1; display: flex; flex-direction: column; gap: 5px; }
-        input[type="range"] { accent-color: #58a6ff; cursor: pointer; }
-        
+
         .dashboard {
-            background: #161b22; padding: 20px; border-radius: 12px;
-            border: 1px solid #30363d; width: 300px; font-family: monospace;
+            background: var(--bg-panel); 
+            padding: 24px; 
+            border-radius: 16px;
+            border: 1px solid var(--border-color); 
+            flex: 1 1 300px;
+            max-width: 350px;
+            box-sizing: border-box;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
         }
-        h2, h3 { color: #58a6ff; margin-top: 0; }
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #30363d; }
-        .val { color: #ffca28; font-weight: bold; }
-        .vector-legend { margin-top: 20px; padding: 10px; background: #0d1117; border-radius: 6px; }
-        .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
-        .color-box { width: 15px; height: 15px; border-radius: 3px; }
+
+        /* Typography */
+        h2 { color: var(--text-main); margin-top: 0; font-weight: 600; letter-spacing: -0.5px; }
+        h3 { color: var(--text-main); margin-top: 0; font-weight: 500; }
+        .sub-text { color: var(--text-muted); font-size: 12px; line-height: 1.5; margin-bottom: 20px; }
+
+        /* Canvas */
+        canvas { 
+            background: var(--bg-base); 
+            border: 1px solid var(--border-color); 
+            border-radius: 12px; 
+            width: 100%; 
+            height: auto; 
+            aspect-ratio: 16/9;
+            display: block;
+        }
+
+        /* Controls Area */
+        .controls { 
+            display: flex; 
+            flex-wrap: wrap;
+            gap: 20px; 
+            margin-top: 24px; 
+            padding: 20px; 
+            background: rgba(255,255,255,0.02); 
+            border-radius: 12px; 
+            border: 1px solid var(--border-color);
+            align-items: flex-end;
+        }
+        
+        .slider-group { 
+            flex: 1 1 150px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+        }
+        
+        .slider-group label {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .slider-group label span {
+            color: var(--accent-primary);
+            font-weight: bold;
+        }
+
+        /* Custom Sliders */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: var(--neon-shadow);
+            transition: transform 0.2s;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #333;
+            border-radius: 2px;
+        }
+
+        /* Buttons */
+        button {
+            padding: 12px 24px; 
+            background: transparent; 
+            color: var(--accent-primary); 
+            border: 1px solid var(--accent-primary); 
+            border-radius: 8px; 
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            flex: 1 1 100%;
+            max-width: 200px;
+            text-align: center;
+        }
+
+        button:hover {
+            background: var(--accent-primary);
+            color: var(--bg-base);
+            box-shadow: var(--neon-shadow);
+        }
+
+        /* Dashboard Stats */
+        .stat-row { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 12px; 
+            padding-bottom: 12px; 
+            border-bottom: 1px solid var(--border-color); 
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        .stat-row:last-child { border-bottom: none; }
+        .val { color: var(--text-main); font-family: monospace; font-size: 15px; font-weight: bold; }
+        
+        /* Legend */
+        .vector-legend { 
+            margin-top: 24px; 
+            padding: 16px; 
+            background: rgba(255,255,255,0.02); 
+            border-radius: 12px; 
+            border: 1px solid var(--border-color);
+        }
+        .legend-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            margin-bottom: 10px; 
+            font-size: 13px;
+            color: var(--text-main);
+        }
+        .legend-item:last-child { margin-bottom: 0; }
+        .color-box { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
     </style>
 </head>
 <body>
 
 <div class="canvas-container">
-    <h2>Crossed Fields: Vector Dynamics</h2>
+    <h2>Crossed Fields Dynamics</h2>
     <canvas id="simCanvas" width="800" height="450"></canvas>
     
     <div class="controls">
         <div class="slider-group">
-            <label>Electric Field (E): <span id="labelE">15</span> V/m</label>
+            <label>Electric Field (E) <span><span id="labelE">15</span> V/m</span></label>
             <input type="range" id="sliderE" min="5" max="30" step="1" value="15">
         </div>
         <div class="slider-group">
-            <label>Magnetic Field (B): <span id="labelB">2.0</span> T</label>
+            <label>Magnetic Field (B) <span><span id="labelB">2.0</span> T</span></label>
             <input type="range" id="sliderB" min="1" max="4" step="0.1" value="2.0">
         </div>
-        <button id="resetBtn" style="padding: 10px 20px; background: #238636; color: white; border: none; border-radius: 6px; cursor: pointer;">Reset Trajectory</button>
+        <button id="resetBtn">Reset Trajectory</button>
     </div>
 </div>
 
 <div class="dashboard">
-    <h3>Physics Engine Data</h3>
-    <p style="color: #8b949e; font-size: 12px;">Assuming q=1 C, m=1 kg. B is out of page (+z), E is UP (+y).</p>
+    <h3>Physics Telemetry</h3>
+    <p class="sub-text">Assuming q=1C, m=1kg.<br>B is out of page (+z), E is UP (+y).</p>
     
     <div class="stat-row"><span>Drift Vel (E/B)</span> <span class="val" id="outVd">0.00</span></div>
     <div class="stat-row"><span>Max Height (2mE/qB²)</span> <span class="val" id="outH">0.00</span></div>
     
-    <h3 style="margin-top: 20px; font-size: 14px; color: #8b949e;">Instantaneous Vectors</h3>
-    <div class="stat-row"><span>Vel x (v_x)</span> <span class="val" id="outVx">0.00</span></div>
-    <div class="stat-row"><span>Vel y (v_y)</span> <span class="val" id="outVy">0.00</span></div>
+    <h3 style="margin-top: 30px;">Instantaneous Vectors</h3>
+    <div class="stat-row"><span>Velocity X (v_x)</span> <span class="val" id="outVx">0.00</span></div>
+    <div class="stat-row"><span>Velocity Y (v_y)</span> <span class="val" id="outVy">0.00</span></div>
     <div class="stat-row"><span>Net Force Y (F_y)</span> <span class="val" id="outFy">0.00</span></div>
 
     <div class="vector-legend">
-        <div class="legend-item"><div class="color-box" style="background:#4caf50;"></div> Electric Force (qE)</div>
-        <div class="legend-item"><div class="color-box" style="background:#2196f3;"></div> Magnetic Force (qv×B)</div>
-        <div class="legend-item"><div class="color-box" style="background:#ff5252;"></div> Net Velocity (v)</div>
+        <div class="legend-item"><div class="color-box" style="color: var(--color-electric); background: var(--color-electric);"></div> Electric Force (qE)</div>
+        <div class="legend-item"><div class="color-box" style="color: var(--color-magnetic); background: var(--color-magnetic);"></div> Magnetic Force (qv×B)</div>
+        <div class="legend-item"><div class="color-box" style="color: var(--color-velocity); background: var(--color-velocity);"></div> Net Velocity (v)</div>
     </div>
 </div>
 
@@ -79,15 +242,22 @@
     const labelE = document.getElementById('labelE');
     const labelB = document.getElementById('labelB');
     
+    // Colors syncing with CSS
+    const styles = getComputedStyle(document.documentElement);
+    const colorElectric = styles.getPropertyValue('--color-electric').trim();
+    const colorMagnetic = styles.getPropertyValue('--color-magnetic').trim();
+    const colorVelocity = styles.getPropertyValue('--color-velocity').trim();
+    const gridColor = '#222222';
+    
     // Core Physics Variables
     let E = parseFloat(sliderE.value);
     let B = parseFloat(sliderB.value);
-    const q = 1; // Charge
-    const m = 1; // Mass
+    const q = 1; 
+    const m = 1; 
     
-    let t = 0; // Time
+    let t = 0; 
     let pathHistory = [];
-    const scale = 5; // Visual scaling factor
+    const scale = 5; 
     const groundY = canvas.height - 40;
 
     function resetSim() {
@@ -101,10 +271,15 @@
     document.getElementById('resetBtn').addEventListener('click', resetSim);
 
     function drawArrow(fromx, fromy, tox, toy, color, width=2) {
-        const headlen = 8; 
+        const headlen = 10; 
         const dx = tox - fromx;
         const dy = toy - fromy;
         const angle = Math.atan2(dy, dx);
+        
+        // Add subtle glow to vectors
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = color;
+        
         ctx.beginPath();
         ctx.moveTo(fromx, fromy);
         ctx.lineTo(tox, toy);
@@ -114,64 +289,58 @@
         ctx.strokeStyle = color;
         ctx.lineWidth = width;
         ctx.stroke();
+        
+        ctx.shadowBlur = 0; // Reset
     }
 
     function updatePhysics() {
-        // Advanced Equations
         let omega = (q * B) / m;
-        let R = E / (omega * B); // mE / qB^2
+        let R = E / (omega * B); 
         let v_drift = E / B;
 
-        // Kinematics at time t
         let x = R * (omega * t - Math.sin(omega * t));
         let y = R * (1 - Math.cos(omega * t));
         
         let vx = v_drift * (1 - Math.cos(omega * t));
         let vy = v_drift * Math.sin(omega * t);
 
-        // Forces
-        // Electric Force is constant UP (+y in math, -y on canvas)
         let F_e_y = q * E; 
-        
-        // Magnetic Force F = q(v x B). B is out of page (+z).
-        // F_m = q(vx*i + vy*j) x (B*k) = -q*vx*B*j + q*vy*B*i
         let F_m_x = q * vy * B;
-        let F_m_y = -q * vx * B; // Downwards (-y in math, +y on canvas)
-
+        let F_m_y = -q * vx * B; 
         let F_net_y = F_e_y + F_m_y;
 
-        // Visual Mapping
         let drawX = 50 + x * scale;
         let drawY = groundY - y * scale;
 
-        // Loop screen if particle goes off right edge
         if (drawX > canvas.width + 50) { resetSim(); return; }
 
         pathHistory.push({x: drawX, y: drawY});
 
-        // 1. Clear & Draw Ground
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw Ground
         ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY);
-        ctx.strokeStyle = '#30363d'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.strokeStyle = gridColor; ctx.lineWidth = 2; ctx.stroke();
 
-        // 2. Draw Trajectory Path
+        // Draw Trajectory Path with slight glow
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.3)';
         ctx.beginPath();
         if(pathHistory.length > 0) ctx.moveTo(pathHistory[0].x, pathHistory[0].y);
         for(let p of pathHistory) { ctx.lineTo(p.x, p.y); }
-        ctx.strokeStyle = 'rgba(100, 255, 218, 0.4)'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.shadowBlur = 0;
 
-        // 3. Draw Particle
-        ctx.beginPath(); ctx.arc(drawX, drawY, 6, 0, Math.PI * 2);
-        ctx.fillStyle = '#c9d1d9'; ctx.fill();
+        // Draw Particle
+        ctx.beginPath(); ctx.arc(drawX, drawY, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff'; ctx.fill();
+        ctx.shadowBlur = 10; ctx.shadowColor = '#ffffff'; ctx.fill(); ctx.shadowBlur = 0;
 
-        // 4. Draw Vectors (scaled for visual clarity)
+        // Draw Vectors
         let vecScale = 1.5;
-        // Velocity (Red)
-        drawArrow(drawX, drawY, drawX + vx*vecScale, drawY - vy*vecScale, '#ff5252');
-        // Electric Force (Green) - Points straight up
-        drawArrow(drawX, drawY, drawX, drawY - F_e_y*vecScale, '#4caf50');
-        // Magnetic Force (Blue)
-        drawArrow(drawX, drawY, drawX + F_m_x*vecScale, drawY + (-F_m_y)*vecScale, '#2196f3');
+        drawArrow(drawX, drawY, drawX + vx*vecScale, drawY - vy*vecScale, colorVelocity);
+        drawArrow(drawX, drawY, drawX, drawY - F_e_y*vecScale, colorElectric);
+        drawArrow(drawX, drawY, drawX + F_m_x*vecScale, drawY + (-F_m_y)*vecScale, colorMagnetic);
 
         // Update Dashboard Data
         document.getElementById('outVd').innerText = v_drift.toFixed(2);
@@ -180,12 +349,10 @@
         document.getElementById('outVy').innerText = vy.toFixed(2);
         document.getElementById('outFy').innerText = F_net_y.toFixed(2);
 
-        // Advance time
         t += 0.04;
         requestAnimationFrame(updatePhysics);
     }
 
-    // Start Engine
     updatePhysics();
 </script>
 
